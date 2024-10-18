@@ -663,8 +663,9 @@
 			interrupt-names = "host", "peripheral";
 			maximum-speed = "high-speed";
 			dr_mode = "otg";
-			snps,usb2-gadget-lpm-disable;
-			snps,usb2-lpm-disable;
+			// snps,usb2-gadget-lpm-disable;
+			//snps,usb2-lpm-disable;
+			snps,dis_u2_susphy_quirk;
 		};
 	};
 
@@ -689,8 +690,9 @@
 			interrupt-names = "host", "peripheral";
 			maximum-speed = "high-speed";
 			dr_mode = "otg";
-			snps,usb2-gadget-lpm-disable;
-			snps,usb2-lpm-disable;
+			// snps,usb2-gadget-lpm-disable;
+			// snps,usb2-lpm-disable;
+			snps,dis_u2_susphy_quirk;
 		};
 	};
 
