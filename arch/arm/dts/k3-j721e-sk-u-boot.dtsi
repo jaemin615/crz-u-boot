@@ -1,0 +1,200 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (C) 2021 Texas Instruments Incorporated - https://www.ti.com/
+ */
+
+#include "k3-j721e-binman.dtsi"
+
+&cbass_main {
+	bootph-all;
+};
+
+&main_navss {
+	bootph-all;
+};
+
+&cbass_mcu_wakeup {
+	bootph-all;
+
+	chipid@43000014 {
+		bootph-all;
+	};
+};
+
+&mcu_navss {
+	bootph-all;
+};
+
+&mcu_ringacc {
+		bootph-all;
+};
+
+&mcu_udmap {
+	reg =	<0x0 0x285c0000 0x0 0x100>,
+		<0x0 0x284c0000 0x0 0x4000>,
+		<0x0 0x2a800000 0x0 0x40000>,
+		<0x0 0x284a0000 0x0 0x4000>,
+		<0x0 0x2aa00000 0x0 0x40000>,
+		<0x0 0x28400000 0x0 0x2000>;
+		reg-names = "gcfg", "rchan", "rchanrt", "tchan",
+			    "tchanrt", "rflow";
+		bootph-all;
+};
+
+&secure_proxy_main {
+	bootph-all;
+};
+
+&dmsc {
+	bootph-all;
+};
+
+&k3_pds {
+	bootph-all;
+};
+
+&k3_clks {
+	bootph-all;
+};
+
+&k3_reset {
+	bootph-all;
+};
+
+&wkup_pmx0 {
+	bootph-all;
+};
+
+&main_pmx0 {
+	bootph-all;
+};
+
+&main_uart0 {
+	bootph-all;
+};
+
+&mcu_uart0 {
+	bootph-all;
+};
+
+&main_sdhci1 {
+	bootph-all;
+};
+
+&main_uart0_pins_default {
+	bootph-all;
+};
+
+&serdes_ln_ctrl {
+	compatible = "mmio-mux";
+	u-boot,mux-autoprobe;
+	mux-reg-masks = <0x4080 0x3>, <0x4084 0x3>, /* SERDES0 lane0/1 select */
+			<0x4090 0x3>, <0x4094 0x3>, /* SERDES1 lane0/1 select */
+			<0x40a0 0x3>, <0x40a4 0x3>, /* SERDES2 lane0/1 select */
+			<0x40b0 0x3>, <0x40b4 0x3>, /* SERDES3 lane0/1 select */
+			<0x40c0 0x3>, <0x40c4 0x3>, <0x40c8 0x3>, <0x40cc 0x3>;
+			/* SERDES4 lane0/1/2/3 select */
+};
+
+&usb_serdes_mux {
+	compatible = "mmio-mux";
+	u-boot,mux-autoprobe;
+	mux-reg-masks = <0x4000 0x8000000>, /* USB0 to SERDES0/3 mux */
+			<0x4010 0x8000000>; /* USB1 to SERDES1/2 mux */
+};
+
+&main_usbss0_pins_default {
+	bootph-all;
+};
+
+&usbss0 {
+	bootph-all;
+};
+
+/* Required for USB DFU boot */
+&usb0 {
+	dr_mode = "peripheral";
+	bootph-all;
+};
+
+/* Required for USB DFU Boot */
+&serdes3_usb_link {
+	bootph-all;
+};
+
+&main_usbss1_pins_default {
+	bootph-all;
+};
+
+&usbss1 {
+	bootph-all;
+};
+
+&usb1 {
+	dr_mode = "host";
+	bootph-all;
+};
+
+&main_mmc1_pins_default {
+	bootph-all;
+};
+
+&wkup_i2c0_pins_default {
+	bootph-all;
+};
+
+&wkup_i2c0 {
+	bootph-all;
+};
+
+&wkup_uart0 {
+	bootph-all;
+	status = "okay";
+};
+
+&mcu_fss0_ospi0_pins_default {
+	bootph-all;
+};
+
+&fss {
+	bootph-all;
+};
+
+&main_esm {
+	bootph-all;
+};
+
+&ospi0 {
+	bootph-all;
+
+	flash@0 {
+		bootph-all;
+
+		partition@3fc0000 {
+			bootph-all;
+		};
+	};
+};
+
+#ifdef CONFIG_TARGET_J721E_A72_EVM
+
+#define SPL_J721E_SK_DTB "spl/dts/k3-j721e-sk.dtb"
+#define J721E_SK_DTB "u-boot.dtb"
+
+&spl_j721e_dtb {
+	filename = SPL_J721E_SK_DTB;
+};
+
+&j721e_dtb {
+	filename = J721E_SK_DTB;
+};
+
+&spl_j721e_dtb_unsigned {
+	filename = SPL_J721E_SK_DTB;
+};
+
+&j721e_dtb_unsigned {
+	filename = J721E_SK_DTB;
+};
+
+#endif
