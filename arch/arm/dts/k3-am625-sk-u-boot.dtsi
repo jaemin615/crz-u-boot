@@ -20,15 +20,15 @@
 		data-mapping = "vesa-24";
 		panel-timing {
 				bootph-pre-ram;
-				clock-frequency = <150274>;
+				clock-frequency = <148500>;
 				hactive = <1920>;
-				vactive = <1200>;
-				hback-porch = <32>;
-				hfront-porch = <52>;
-				vback-porch = <24>;
-				vfront-porch = <8>;
-				hsync-len = <24>;
-				vsync-len = <3>;
+ 			vactive = <1080>;
+				hback-porch = <104>;
+				hfront-porch = <88>;
+				vback-porch = <36>;
+				vfront-porch = <4>;
+				hsync-len = <88>;
+				vsync-len = <5>;
 				de-active = <1>;
 		};
 	};

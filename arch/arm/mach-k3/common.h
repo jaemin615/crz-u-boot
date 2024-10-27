@@ -2,7 +2,7 @@
 /*
  * K3: Architecture common definitions
  *
- * Copyright (C) 2018-2024 Texas Instruments Incorporated - https://www.ti.com/
+	 * Copyright (C) 2018-2024 Texas Instruments Incorporated - https://www.ti.com/
  *	Lokesh Vutla <lokeshvutla@ti.com>
  */
 
@@ -10,17 +10,11 @@
 #include <asm/hardware.h>
 #include <mach/security.h>
 
-#define K3_FIREWALL_BACKGROUND_BIT (8)
 
 struct fwl_data {
 	const char *name;
 	u16 fwl_id;
 	u16 regions;
-};
-
-enum k3_firewall_region_type {
-	K3_FIREWALL_REGION_FOREGROUND,
-	K3_FIREWALL_REGION_BACKGROUND
 };
 
 enum k3_device_type {

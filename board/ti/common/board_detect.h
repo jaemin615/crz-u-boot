@@ -266,6 +266,7 @@ struct ti_am6_eeprom {
  * ep in SRAM is populated by the this AM generic function that consolidates
  * the basic initialization logic common across all AM* platforms.
  */
+int CRZ_set_board_header_and_name(void);
 int ti_i2c_eeprom_am_get(int bus_addr, int dev_addr);
 
 /**

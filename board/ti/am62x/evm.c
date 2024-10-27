@@ -7,6 +7,7 @@
  *
  */
 
+#include <common.h>
 #include <env.h>
 #include <spl.h>
 #include <init.h>
@@ -65,6 +66,7 @@ int board_init(void)
 #if CONFIG_IS_ENABLED(TI_I2C_BOARD_DETECT)
 int do_board_detect(void)
 {
+#if 0
 	int ret;
 
 	ret = ti_i2c_eeprom_am6_get_base(CONFIG_EEPROM_BUS_ADDRESS,
@@ -80,6 +82,33 @@ int do_board_detect(void)
 	}
 
 	return ret;
+#else
+#define BOOT_DEVICE_EMMC        0x09
+#define BOOT_DEVICE_NAND        0x0B
+
+	u32 devstat = readl(CTRLMMR_MAIN_DEVSTAT);
+	u32 bootmode = (devstat & MAIN_DEVSTAT_PRIMARY_BOOTMODE_MASK) >>
+				MAIN_DEVSTAT_PRIMARY_BOOTMODE_SHIFT;
+	char memsize[10];
+
+	switch (bootmode) {
+	case BOOT_DEVICE_EMMC:
+		env_set("mmcdev", "0");
+		env_set("bootpart", "0:1");
+		break;
+	case BOOT_DEVICE_NAND:
+		env_set("boot", "nand");
+		break;
+	default:
+		break;
+	}
+
+	sprintf(memsize, "%dG", (int)(gd->ram_size / 0x40000000));
+	env_set("memsize", memsize);
+
+	MANGO_DBG_DEFAULT;
+	return CRZ_set_board_header_and_name();
+#endif
 }
 
 int checkboard(void)
@@ -155,6 +184,13 @@ int board_late_init(void)
 
 #if defined(CONFIG_SPL_BUILD)
 
+#define WKUP_CTRLMMR_DBOUNCE_CFG1 0x04504084
+#define WKUP_CTRLMMR_DBOUNCE_CFG2 0x04504088
+#define WKUP_CTRLMMR_DBOUNCE_CFG3 0x0450408c
+#define WKUP_CTRLMMR_DBOUNCE_CFG4 0x04504090
+#define WKUP_CTRLMMR_DBOUNCE_CFG5 0x04504094
+#define WKUP_CTRLMMR_DBOUNCE_CFG6 0x04504098
+
 void spl_board_init(void)
 {
 	u32 val;
@@ -167,6 +203,20 @@ void spl_board_init(void)
 	/* Make sure to mux up to take the SoC 32k from the crystal */
 	writel(MCU_CTRL_DEVICE_CLKOUT_LFOSC_SELECT_VAL,
 	       MCU_CTRL_DEVICE_CLKOUT_32K_CTRL);
+
+	/* Setup debounce conf registers - arbitrary values. Times are approx */
+	/* 1.9ms debounce @ 32k */
+	writel(WKUP_CTRLMMR_DBOUNCE_CFG1, 0x1);
+	/* 5ms debounce @ 32k */
+	writel(WKUP_CTRLMMR_DBOUNCE_CFG2, 0x5);
+	/* 20ms debounce @ 32k */
+	writel(WKUP_CTRLMMR_DBOUNCE_CFG3, 0x14);
+	/* 46ms debounce @ 32k */
+	writel(WKUP_CTRLMMR_DBOUNCE_CFG4, 0x18);
+	/* 100ms debounce @ 32k */
+	writel(WKUP_CTRLMMR_DBOUNCE_CFG5, 0x1c);
+	/* 156ms debounce @ 32k */
+	writel(WKUP_CTRLMMR_DBOUNCE_CFG6, 0x1f);
 
 	enable_caches();
 	if (IS_ENABLED(CONFIG_SPL_SPLASH_SCREEN) && IS_ENABLED(CONFIG_SPL_BMP))

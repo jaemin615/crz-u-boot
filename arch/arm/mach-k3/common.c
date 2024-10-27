@@ -319,31 +319,6 @@ void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 	if (ret)
 		panic("%s: ATF failed to load on rproc (%d)\n", __func__, ret);
 
-#if (CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS) && IS_ENABLED(CONFIG_SYS_K3_SPL_ATF))
-	/* Authenticate ATF */
-	void *image_addr = (void *)fit_image_info[IMAGE_ID_ATF].image_start;
-
-	debug("%s: Authenticating image: addr=%lx, size=%ld, os=%s\n", __func__,
-	      fit_image_info[IMAGE_ID_ATF].image_start,
-	      fit_image_info[IMAGE_ID_ATF].image_len,
-	      image_os_match[IMAGE_ID_ATF]);
-
-	ti_secure_image_post_process(&image_addr,
-				     (size_t *)&fit_image_info[IMAGE_ID_ATF].image_len);
-
-	/* Authenticate OPTEE */
-	image_addr = (void *)fit_image_info[IMAGE_ID_OPTEE].image_start;
-
-	debug("%s: Authenticating image: addr=%lx, size=%ld, os=%s\n", __func__,
-	      fit_image_info[IMAGE_ID_OPTEE].image_start,
-	      fit_image_info[IMAGE_ID_OPTEE].image_len,
-	      image_os_match[IMAGE_ID_OPTEE]);
-
-	ti_secure_image_post_process(&image_addr,
-				     (size_t *)&fit_image_info[IMAGE_ID_OPTEE].image_len);
-
-#endif
-
 	if (!fit_image_info[IMAGE_ID_DM_FW].image_len &&
 	    !(size > 0 && valid_elf_image(loadaddr))) {
 		shut_cpu = 1;
@@ -423,19 +398,6 @@ void board_fit_image_post_process(const void *fit, int node, void **p_image,
 		return;
 	}
 
-	/*
-	 * Only DM and the DTBs are being authenticated here,
-	 * rest will be authenticated when A72 cluster is up
-	 */
-	if ((i != IMAGE_ID_ATF) && (i != IMAGE_ID_OPTEE))
-#endif
-	{
-		ti_secure_image_check_binary(p_image, p_size);
-		ti_secure_image_post_process(p_image, p_size);
-	}
-#if IS_ENABLED(CONFIG_SYS_K3_SPL_ATF)
-	else
-		ti_secure_image_check_binary(p_image, p_size);
 #endif
 }
 #endif
@@ -560,47 +522,34 @@ void disable_linefill_optimization(void)
 }
 #endif
 
-static void remove_fwl_regions(struct fwl_data fwl_data, size_t num_regions,
-			       enum k3_firewall_region_type fwl_type)
+void remove_fwl_configs(struct fwl_data *fwl_data, size_t fwl_data_size)
 {
+	struct ti_sci_msg_fwl_region region;
 	struct ti_sci_fwl_ops *fwl_ops;
 	struct ti_sci_handle *ti_sci;
-	struct ti_sci_msg_fwl_region region;
-	size_t j;
+	size_t i, j;
 
 	ti_sci = get_ti_sci_handle();
 	fwl_ops = &ti_sci->ops.fwl_ops;
 
-	for (j = 0; j < fwl_data.regions; j++) {
-		region.fwl_id = fwl_data.fwl_id;
-		region.region = j;
-		region.n_permission_regs = 3;
-
-		fwl_ops->get_fwl_region(ti_sci, &region);
-
-		/* Don't disable the background regions */
-		if (region.control != 0 &&
-		    ((region.control >> K3_FIREWALL_BACKGROUND_BIT) & 1) == fwl_type) {
-			pr_debug("Attempting to disable firewall %5d (%25s)\n",
-				 region.fwl_id, fwl_data.name);
-			region.control = 0;
-
-			if (fwl_ops->set_fwl_region(ti_sci, &region))
-				pr_err("Could not disable firewall %5d (%25s)\n",
-				       region.fwl_id, fwl_data.name);
-		}
-	}
-}
-
-void remove_fwl_configs(struct fwl_data *fwl_data, size_t fwl_data_size)
-{
-	size_t i;
-
 	for (i = 0; i < fwl_data_size; i++) {
-		remove_fwl_regions(fwl_data[i], fwl_data[i].regions,
-				   K3_FIREWALL_REGION_FOREGROUND);
-		remove_fwl_regions(fwl_data[i], fwl_data[i].regions,
-				   K3_FIREWALL_REGION_BACKGROUND);
+			region.fwl_id = fwl_data[i].fwl_id;
+			region.region = j;
+		for (j = 0; j <  fwl_data[i].regions; j++) {
+			region.n_permission_regs = 3;
+
+			fwl_ops->get_fwl_region(ti_sci, &region);
+
+			if (region.control != 0) {
+				pr_debug("Attempting to disable firewall %5d (%25s)\n",
+						region.fwl_id, fwl_data[i].name);
+				region.control = 0;
+
+				if (fwl_ops->set_fwl_region(ti_sci, &region))
+					pr_err("Could not disable firewall %5d (%25s)\n",
+							region.fwl_id, fwl_data[i].name);
+			}
+		}
 	}
 }
 

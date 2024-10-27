@@ -17,6 +17,30 @@
 		serial0 = &wkup_uart0;
 		serial3 = &main_uart1;
 	};
+	chosen {
+		stdout-path = "serial2:115200n8";
+		tick-timer = &main_timer0;
+	};
+
+	memory@80000000 {
+ 		device_type = "memory";
+ 		/* 2G RAM */
+ 		reg = <0x00000000 0x80000000 0x00000000 0x80000000>;
+
+		bootph-pre-ram;
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		secure_ddr: optee@9e800000 {
+			reg = <0x00 0x9e800000 0x00 0x01800000>; /* for OP-TEE */
+			alignment = <0x1000>;
+			no-map;
+		};
+	};
 
 	a53_0: a53@0 {
 		compatible = "ti,am654-rproc";
@@ -44,6 +68,12 @@
 			<&secure_proxy_main 23>;
 		bootph-pre-ram;
 	};
+	dummy_133mhz_clk: clock {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <133333333>;
+		bootph-pre-ram;
+	};
 };
 
 &dmsc {
@@ -60,23 +90,64 @@
 	status = "okay";
 };
 
-&cbass_main {
-	sysctrler: sysctrler {
-		compatible = "ti,am654-system-controller";
-		mboxes= <&secure_proxy_main 1>, <&secure_proxy_main 0>, <&secure_proxy_sa3 0>;
-		mbox-names = "tx", "rx", "boot_notify";
+
+&cbass_mcu {
+	mcu_esm: esm@4100000 {
+		compatible = "ti,j721e-esm";
+		reg = <0x0 0x4100000 0x0 0x1000>;
+		ti,esm-pins = <0>, <1>, <2>, <85>;
 		bootph-pre-ram;
 	};
 };
 
+&cbass_main {
+	sa3_secproxy: secproxy@44880000 {
+		bootph-pre-ram;
+		compatible = "ti,am654-secure-proxy";
+		#mbox-cells = <1>;
+		reg-names = "rt", "scfg", "target_data";
+		reg = <0x00 0x44880000 0x00 0x20000>,
+		      <0x00 0x44860000 0x00 0x20000>,
+		      <0x00 0x43600000 0x00 0x10000>;
+	};
+
+	sysctrler: sysctrler {
+		compatible = "ti,am654-system-controller";
+		mboxes= <&secure_proxy_main 1>, <&secure_proxy_main 0>, <&sa3_secproxy 0>;
+		mbox-names = "tx", "rx", "boot_notify";
+		bootph-pre-ram;
+	};
+
+	main_esm: esm@420000 {
+		compatible = "ti,j721e-esm";
+		reg = <0x0 0x420000 0x0 0x1000>;
+		ti,esm-pins = <160>, <161>, <162>, <163>, <177>, <178>;
+		bootph-pre-ram;
+	};
+};
+
+&mcu_pmx0 {
+	bootph-pre-ram;
+};
+
+&main_pmx0 {
+	bootph-pre-ram;
+};
+
 /* WKUP UART0 is used for DM firmware logs */
 &wkup_uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&wkup_uart0_pins_default>;
 	status = "okay";
+	bootph-pre-ram;
 };
 
 /* Main UART1 is used for TIFS firmware logs */
 &main_uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&main_uart1_pins_default>;
 	status = "okay";
+	bootph-pre-ram;
 };
 
 &ospi0 {
@@ -86,5 +157,15 @@
 
 &main_pktdma {
 	ti,sci = <&dm_tifs>;
-	bootph-all;
+	bootph-pre-ram;
 };
+
+
+&elm0 {
+	/delete-property/ power-domains;
+};
+
+&gpmc0 {
+	/delete-property/ power-domains;
+	clocks = <&dummy_133mhz_clk>;
+ };
